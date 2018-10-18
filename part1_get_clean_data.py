@@ -17,10 +17,12 @@ os.chdir(project_root)
 import io
 import wbdata
 import zipfile
+import scipy
 import requests
 import unidecode
 import numpy as np
 import pandas as pd
+import scipy.stats as stats
 import matplotlib.pyplot as plt
 from pandas.api.types import CategoricalDtype
 
@@ -65,12 +67,18 @@ df_meta       = df_meta[df_meta['TableName'].isin(subs_african_countries)]
 income_levels = dict(zip(df_meta['TableName'], df_meta['IncomeGroup']))
 
 
-# helper function
+# helper functions
 def get_df_by_year(indicator, indicator_name):
     indicator = {indicator: indicator_name}
     df = wbdata.get_dataframe(indicator, convert_date=False).reset_index()
     df = df[df['country'].isin(subs_african_countries)]
     df = df.pivot(index='country', columns='date', values=indicator_name)
+    return(df)
+
+def get_flat_df_by_year(indicator, indicator_name):
+    indicator = {indicator: indicator_name}
+    df = wbdata.get_dataframe(indicator, convert_date=False).reset_index()
+    df = df[df['country'].isin(subs_african_countries)]
     return(df)
 
 # load datasets (gdp, pop, df_internet, df_electric)
@@ -82,7 +90,7 @@ df_internet   = get_df_by_year('IT.NET.USER.ZS', 'internet')
 df_cellphones = get_df_by_year('IT.CEL.SETS.P2', 'cellphones')
 # df_hospitals  = get_df_by_year('SH.MED.BEDS.ZS', 'hospital_beds')
 # df_doctors    = get_df_by_year('SH.MED.PHYS.ZS', 'doctors')
-
+gdp_growth_flat = get_flat_df_by_year('NY.GDP.MKTP.KD.ZG', 'gdp_growth')
 
 # log values
 log_gdp = gdp.copy()
@@ -94,19 +102,19 @@ for year in pop.columns[1:-1]:
     log_pop[year] = np.log10(log_pop[year])
     
 # map country code to all datasets
-for df in [gdp, pop, df_electric, df_internet, df_cellphones, log_pop, log_gdp, gdp_growth]:
+for df in [gdp, pop, df_electric, df_internet, df_cellphones, log_pop, log_gdp, gdp_growth, gdp_growth_flat]:
     df['country_code'] = df.index.map(country_codes)
 
 # map income level to all datasets
 cat_type = CategoricalDtype(categories=['High income', 'Upper middle income', 'Lower middle income', 'Low income'], 
                             ordered=True)
-for df in [gdp, pop, df_electric, df_internet, df_cellphones, log_pop, log_gdp, gdp_growth]:
+for df in [gdp, pop, df_electric, df_internet, df_cellphones, log_pop, log_gdp, gdp_growth, gdp_growth_flat]:
     df['income_level'] = df.index.map(income_levels).astype(cat_type)
 
 
 
 ###################
-# explore datasets
+# explore datasets, run stats
 
 # check how many missing values in each df
 gdp.isnull().sum().sum()
@@ -132,12 +140,12 @@ df_2016.isnull().sum().sum()
 # check correlations
 df_2016.corr()
 
-# run pairplot
+# plot 1: run pairplot
 tmp = df_2016.copy()
 tmp = tmp[tmp.isnull().sum(axis=1) == 0]
 sns.pairplot(tmp)
 
-# run boxplots
+# plot 2: run boxplots
 df_2016.describe()
 df_2016.boxplot(column=['electric', 'internet', 'cellphones'])
 
@@ -147,12 +155,23 @@ years = [str(x) for x in list(range(1990,2017))]
 for year in years:
     print(year, round(df_electric[year].min(),2), round(df_electric[year].max(),2))
 
-# run 2016 data by income level
+# plot 3: run 2016 data by income level
 print(df_2016.groupby('income_level').count())
 df_avg = df_2016.groupby('income_level').mean()
 df_avg = df_avg.T
 df_avg.plot(kind='bar', figsize=(8,5), title='Indicators by Income Level of Country',
             color=['b','g','C1','r'])
+
+# check for statistical significance among income-levels
+for colname in df_2016.columns[2:-1]:
+    high   = df_2016[colname][df_2016['income_level'] =='High income']
+    upmid  = df_2016[colname][df_2016['income_level'] =='Upper middle income']
+    lowmid = df_2016[colname][df_2016['income_level'] =='Lower middle income']
+    low    = df_2016[colname][df_2016['income_level'] =='Low income']
+    
+    _, p = scipy.stats.f_oneway(high, upmid, lowmid, low)
+    print(colname + ': ', p)
+
 
 # check growth rates since 2000 of key indicators (all but docs, elec have grown across all countries)
 for df in [gdp, pop, df_electric, df_internet, df_cellphones]:
@@ -178,7 +197,7 @@ log_gdp.to_csv('data/log_gdp.csv')
 log_pop.to_csv('data/log_pop.csv')
 
 gdp_growth.to_csv('data/gdp_growth.csv')
-
+gdp_growth_flat.to_csv('data/gdp_growth_flat.csv')
 
 ## datasets used but not imported in python
 # https://data.worldbank.org/indicator/NY.GDP.MKTP.KD.ZG

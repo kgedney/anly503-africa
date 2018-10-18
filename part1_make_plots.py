@@ -15,6 +15,7 @@ import wbdata
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+from pandas.api.types import CategoricalDtype
 
 import seaborn as sns
 sns.set_style("whitegrid")
@@ -32,8 +33,16 @@ df_cellphones = pd.read_csv('data/cellphones.csv')
 #df_doctors    = pd.read_csv('data/doctors.csv')
 gdp_growth    = pd.read_csv('data/gdp_growth.csv')
 
+# add category info back to files
+cat_type = CategoricalDtype(categories=['High income', 'Upper middle income', 'Lower middle income', 'Low income'], 
+                            ordered=True)
+for df in [gdp, pop, df_electric, df_internet, df_cellphones, log_pop, log_gdp, gdp_growth]:
+    df['income_level'] = df['income_level'].astype(cat_type)
+
+
 
 ### HEATMAPS ###
+
 # Plot 1 (Heat Map - Internet): 
 df_heat = df_internet.set_index('country')
 df_heat = df_heat.drop(columns=[str(x) for x in list(range(1960,2000))])
@@ -74,6 +83,8 @@ plt.xlabel('Year')
 plt.show()
 
 
+
+
 ### SCATTERPLOTS ###
 
 # create new feature: delta_5yr
@@ -87,18 +98,19 @@ df_scatter = pd.concat([df_internet['country_code'],
                         df_internet['income_level'], 
                         df_internet['delta_5yr'], 
                         gdp_growth['2016']], axis=1)
-
 df_scatter = df_scatter.rename(columns={'income_level': 'Income Level of Country'})
-
-df_scatter['delta_5yr'].corr(df_scatter['2016'])
+print(df_scatter['delta_5yr'].corr(df_scatter['2016']))
   
 plt.figure(figsize=(12,8))
-sns.scatterplot('delta_5yr', '2016', data=df_scatter, hue='Income Level of Country')
+sns.scatterplot(x='delta_5yr', 
+                y='2016', 
+                data=df_scatter, 
+                hue='Income Level of Country', 
+                palette=['b','g','C1','r'])
 plt.title('Infrastructure and GDP Growth')
 plt.xlabel('Internet Growth Rate (2011 to 2016)')
 plt.ylabel('GDP Growth Rate (2016)')
 plt.legend(loc='lower right')
-
 for i, label in enumerate(list(range(0,46))):
     plt.annotate(s=df_scatter['country_code'][i], 
                  xy=(df_scatter['delta_5yr'][i], df_scatter['2016'][i]),
@@ -114,17 +126,17 @@ df_scatter = pd.concat([df_cellphones['country_code'],
                         df_cellphones['delta_5yr'], 
                         gdp_growth['2016']], axis=1)
 df_scatter = df_scatter.rename(columns={'income_level': 'Income Level of Country'})
-
-df_scatter['delta_5yr'].corr(df_scatter['2016'])
+print(df_scatter['delta_5yr'].corr(df_scatter['2016']))
   
 plt.figure(figsize=(12,8))
-sns.scatterplot('delta_5yr', '2016', data=df_scatter, hue='Income Level of Country')
+sns.scatterplot(x='delta_5yr', y='2016', 
+                data=df_scatter, 
+                hue='Income Level of Country',
+                palette=['b','g','C1','r'])
 plt.title('Infrastructure and GDP Growth')
 plt.xlabel('Cellphones Growth Rate (2011 to 2016)')
 plt.ylabel('GDP Growth Rate (2016)')
 plt.legend(loc='lower right')
-
-
 for i, label in enumerate(list(range(0,46))):
     plt.annotate(s=df_scatter['country_code'][i], 
                  xy=(df_scatter['delta_5yr'][i], df_scatter['2016'][i]),
