@@ -87,7 +87,7 @@ plt.show()
 
 ### SCATTERPLOTS ###
 
-# create new feature: delta_5yr
+# create new features: delta_5yr
 df_electric['delta_20yr'] = ((df_electric['2016'] - df_electric['1996']) / df_electric['2011']) *100
 df_internet['delta_5yr'] = ((df_internet['2016'] - df_internet['2011']) / df_internet['2011']) *100
 df_cellphones['delta_5yr'] = ((df_cellphones['2016'] - df_cellphones['2011']) / df_cellphones['2011']) *100
@@ -128,7 +128,8 @@ df_scatter = df_scatter.rename(columns={'income_level': 'Income Level of Country
 print(df_scatter['delta_5yr'].corr(df_scatter['2016']))
   
 plt.figure(figsize=(12,8))
-sns.scatterplot(x='delta_5yr', y='2016', 
+sns.scatterplot(x='delta_5yr', 
+                y='2016', 
                 data=df_scatter, 
                 hue='Income Level of Country',
                 palette=['b','g','C1','r'])
@@ -150,7 +151,7 @@ plt.show()
 income_levels = ['High income', 'Upper middle income', 
             'Lower middle income', 'Low income']
 pie_df = gdp.groupby('income_level').count()
-total = sum(pie_df['country'])
+total  = sum(pie_df['country'])
 
 plt.figure(figsize=(8,8))
 plt.pie(pie_df['country'], autopct=lambda p:'{:.0f}'.format(p * total / 100), 
@@ -167,13 +168,13 @@ plt.show()
 
 # inflation_gdpd[inflation_gdpd['country'] == 'Congo, Dem. Rep.'].T #check outlier
 outlier_countries = ['Congo, Dem. Rep.', 'Angola', 'Somalia']
-inflation_gdpd = inflation_gdpd.drop(columns=[str(x) for x in list(range(1960,1990))])
+inflation_gdpd    = inflation_gdpd.drop(columns=[str(x) for x in list(range(1960,1990))])
 
 # part 1
-inflation_gdpd1 = inflation_gdpd[~inflation_gdpd['country'].isin(outlier_countries)]
+inflation_gdpd1        = inflation_gdpd[~inflation_gdpd['country'].isin(outlier_countries)]
 inflation_gdpd1['avg'] = inflation_gdpd1.iloc[:,1:29].mean(axis=1)
 
-plt.figure(figsize=(8,12))
+plt.figure(figsize=(10,14))
 my_range = list(range(1, 45))
 plt.hlines(y=my_range, xmin=0, xmax=inflation_gdpd1['avg'], color='skyblue')
 plt.plot(inflation_gdpd1['avg'], my_range, "o")
@@ -184,10 +185,10 @@ plt.ylabel('Country')
 plt.show()
 
 # part 2: outlier countries
-inflation_gdpd2 = inflation_gdpd[inflation_gdpd['country'].isin(outlier_countries)]
+inflation_gdpd2        = inflation_gdpd[inflation_gdpd['country'].isin(outlier_countries)]
 inflation_gdpd2['avg'] = inflation_gdpd2.iloc[:,1:29].mean(axis=1)
 
-plt.figure(figsize=(8,1))
+plt.figure(figsize=(10,1))
 my_range2 = list(range(1, 4))
 plt.hlines(y=my_range2, xmin=0, xmax=inflation_gdpd2['avg'], color='darkblue')
 plt.plot(inflation_gdpd2['avg'], my_range2, "o")

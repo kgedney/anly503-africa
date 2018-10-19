@@ -19,10 +19,9 @@ import wbdata
 import zipfile
 import scipy
 import requests
-import unidecode
 import numpy as np
 import pandas as pd
-import scipy.stats as stats
+from scipy import stats
 import matplotlib.pyplot as plt
 from pandas.api.types import CategoricalDtype
 
@@ -82,19 +81,14 @@ def get_flat_df_by_year(indicator, indicator_name):
     return(df)
 
 # load datasets (gdp, pop, df_internet, df_electric)
-gdp           = get_df_by_year('NY.GDP.MKTP.CD', 'gdp')
-gdp_growth    = get_df_by_year('NY.GDP.MKTP.KD.ZG', 'gdp_growth')
-pop           = get_df_by_year('SP.POP.TOTL', 'total_pop')
-df_electric   = get_df_by_year('1.1_ACCESS.ELECTRICITY.TOT', 'electricity_access')
-df_internet   = get_df_by_year('IT.NET.USER.ZS', 'internet')
-df_cellphones = get_df_by_year('IT.CEL.SETS.P2', 'cellphones')
-# df_hospitals  = get_df_by_year('SH.MED.BEDS.ZS', 'hospital_beds')
-# df_doctors    = get_df_by_year('SH.MED.PHYS.ZS', 'doctors')
+gdp             = get_df_by_year('NY.GDP.MKTP.CD', 'gdp')
+gdp_growth      = get_df_by_year('NY.GDP.MKTP.KD.ZG', 'gdp_growth')
+pop             = get_df_by_year('SP.POP.TOTL', 'total_pop')
+df_electric     = get_df_by_year('1.1_ACCESS.ELECTRICITY.TOT', 'electricity_access')
+df_internet     = get_df_by_year('IT.NET.USER.ZS', 'internet')
+df_cellphones   = get_df_by_year('IT.CEL.SETS.P2', 'cellphones')
 gdp_growth_flat = get_flat_df_by_year('NY.GDP.MKTP.KD.ZG', 'gdp_growth')
-inflation_gdpd   = get_df_by_year('NY.GDP.DEFL.KD.ZG', 'gdp_deflator')
-#df_air       = get_df_by_year('IS.AIR.DPRT', 'air_transport')
-#df_rail      = get_df_by_year('IS.RRS.TOTL.KM', 'rail_lines')
-
+inflation_gdpd  = get_df_by_year('NY.GDP.DEFL.KD.ZG', 'gdp_deflator')
 
 
 # log values
@@ -148,7 +142,10 @@ df_2016.corr()
 # plot 1: run pairplot
 tmp = df_2016.copy()
 tmp = tmp[tmp.isnull().sum(axis=1) == 0]
-sns.pairplot(tmp)
+g = sns.pairplot(tmp, diag_kind = 'kde', hue='income_level')
+g.fig.suptitle('Pairpot of Telecom Infrastructure Indicator Data (2016)')
+g.fig.subplots_adjust(top=.95)
+plt.show()
 
 # plot 2: run boxplots
 df_2016.describe()
