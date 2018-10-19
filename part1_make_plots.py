@@ -11,14 +11,13 @@ project_root = '/Users/kgedney/Documents/georgetown/anly503/project/'
 os.chdir(project_root)
 
 # prep
-import wbdata
-import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from pandas.api.types import CategoricalDtype
 
 import seaborn as sns
-sns.set_style("whitegrid")
+sns.set_style('darkgrid')
+sns.set(font_scale=1.25)
 
 
 # load data
@@ -31,12 +30,14 @@ df_internet   = pd.read_csv('data/internet.csv')
 df_cellphones = pd.read_csv('data/cellphones.csv')
 #df_hospitals  = pd.read_csv('data/hospitals.csv')
 #df_doctors    = pd.read_csv('data/doctors.csv')
-gdp_growth    = pd.read_csv('data/gdp_growth.csv')
+gdp_growth     = pd.read_csv('data/gdp_growth.csv')
+inflation_gdpd = pd.read_csv('data/inflation_gdpd.csv')
 
 # add category info back to files
-cat_type = CategoricalDtype(categories=['High income', 'Upper middle income', 'Lower middle income', 'Low income'], 
+cat_type = CategoricalDtype(categories=['High income', 'Upper middle income', 
+                                        'Lower middle income', 'Low income'], 
                             ordered=True)
-for df in [gdp, pop, df_electric, df_internet, df_cellphones, log_pop, log_gdp, gdp_growth]:
+for df in [gdp, pop, df_electric, df_internet, df_cellphones, log_pop, log_gdp, gdp_growth, inflation_gdpd]:
     df['income_level'] = df['income_level'].astype(cat_type)
 
 
@@ -84,7 +85,6 @@ plt.show()
 
 
 
-
 ### SCATTERPLOTS ###
 
 # create new feature: delta_5yr
@@ -107,7 +107,7 @@ sns.scatterplot(x='delta_5yr',
                 data=df_scatter, 
                 hue='Income Level of Country', 
                 palette=['b','g','C1','r'])
-plt.title('Infrastructure and GDP Growth')
+plt.title('Internet and GDP Growth')
 plt.xlabel('Internet Growth Rate (2011 to 2016)')
 plt.ylabel('GDP Growth Rate (2016)')
 plt.legend(loc='lower right')
@@ -117,7 +117,6 @@ for i, label in enumerate(list(range(0,46))):
                  size=9,
                  alpha=0.75)
 plt.show()
-
 
 
 # Plot 5 (Growth in Cellphones vs. Growth in GDP):
@@ -133,9 +132,9 @@ sns.scatterplot(x='delta_5yr', y='2016',
                 data=df_scatter, 
                 hue='Income Level of Country',
                 palette=['b','g','C1','r'])
-plt.title('Infrastructure and GDP Growth')
+plt.title('Cellphones and GDP Growth')
 plt.xlabel('Cellphones Growth Rate (2011 to 2016)')
-plt.ylabel('GDP Growth Rate (2016)')
+plt.ylabel('')
 plt.legend(loc='lower right')
 for i, label in enumerate(list(range(0,46))):
     plt.annotate(s=df_scatter['country_code'][i], 
@@ -145,26 +144,58 @@ for i, label in enumerate(list(range(0,46))):
 plt.show()
 
     
+### PIE CHART ###
 
-    
-    
-    
-    
-### old matplotlib code ###
-#plt.figure(figsize=(8,4))
-#plt.scatter(df_cellphones['delta_5yr'], gdp_growth['2016'], alpha=0.6)
-#plt.ylabel('GDP Growth Rate (2016)')
-#plt.xlabel('Cellphone 5-Yr Growth Rate (2011 to 2016)')
-#
-#for i, label in enumerate(list(range(0,46))):
-#    plt.annotate(s=gdp_growth['country_code'][i], 
-#                 xy=(df_cellphones['delta_5yr'][i], gdp_growth['2016'][i]),
-#                 size=9,
-#                 alpha=0.75)
-#plt.show()
-#
-#sns.scatterplot()
+# Plot 7 (Pie Chart for Income Levels)
+income_levels = ['High income', 'Upper middle income', 
+            'Lower middle income', 'Low income']
+pie_df = gdp.groupby('income_level').count()
+total = sum(pie_df['country'])
 
+plt.figure(figsize=(8,8))
+plt.pie(pie_df['country'], autopct=lambda p:'{:.0f}'.format(p * total / 100), 
+        labels=income_levels, 
+        colors=['b','g','C1','r'],
+        textprops={'fontsize': 14, 'color':'w'})
+plt.title('Country Count by Income Level (2016)', fontsize=14)
+plt.legend(income_levels)
+plt.show()
+    
+   
+### LOLLIPOP ###
+# Plot 8 (Lollipop Plot for GDP Deflator measure of Inflation)
+
+# inflation_gdpd[inflation_gdpd['country'] == 'Congo, Dem. Rep.'].T #check outlier
+outlier_countries = ['Congo, Dem. Rep.', 'Angola', 'Somalia']
+inflation_gdpd = inflation_gdpd.drop(columns=[str(x) for x in list(range(1960,1990))])
+
+# part 1
+inflation_gdpd1 = inflation_gdpd[~inflation_gdpd['country'].isin(outlier_countries)]
+inflation_gdpd1['avg'] = inflation_gdpd1.iloc[:,1:29].mean(axis=1)
+
+plt.figure(figsize=(8,12))
+my_range = list(range(1, 45))
+plt.hlines(y=my_range, xmin=0, xmax=inflation_gdpd1['avg'], color='skyblue')
+plt.plot(inflation_gdpd1['avg'], my_range, "o")
+plt.yticks(my_range, inflation_gdpd1['country'])
+plt.title('Average Inflation 1990-2016 (%) - GDP Deflator', loc='left', fontsize=14)
+plt.xlabel('Inflation (%)')
+plt.ylabel('Country')
+plt.show()
+
+# part 2: outlier countries
+inflation_gdpd2 = inflation_gdpd[inflation_gdpd['country'].isin(outlier_countries)]
+inflation_gdpd2['avg'] = inflation_gdpd2.iloc[:,1:29].mean(axis=1)
+
+plt.figure(figsize=(8,1))
+my_range2 = list(range(1, 4))
+plt.hlines(y=my_range2, xmin=0, xmax=inflation_gdpd2['avg'], color='darkblue')
+plt.plot(inflation_gdpd2['avg'], my_range2, "o")
+plt.yticks(my_range2, inflation_gdpd2['country'])
+plt.title('Outlier Countries', loc='left', fontsize=14)
+plt.xlabel('Inflation (%)')
+plt.ylabel('')
+plt.show()
 
 
 

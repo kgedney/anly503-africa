@@ -27,7 +27,7 @@ import matplotlib.pyplot as plt
 from pandas.api.types import CategoricalDtype
 
 import seaborn as sns
-sns.set()
+sns.set()   
 
 # import filters
 subs_african_countries = ['Angola',	'Benin', 'Botswana',
@@ -91,6 +91,11 @@ df_cellphones = get_df_by_year('IT.CEL.SETS.P2', 'cellphones')
 # df_hospitals  = get_df_by_year('SH.MED.BEDS.ZS', 'hospital_beds')
 # df_doctors    = get_df_by_year('SH.MED.PHYS.ZS', 'doctors')
 gdp_growth_flat = get_flat_df_by_year('NY.GDP.MKTP.KD.ZG', 'gdp_growth')
+inflation_gdpd   = get_df_by_year('NY.GDP.DEFL.KD.ZG', 'gdp_deflator')
+#df_air       = get_df_by_year('IS.AIR.DPRT', 'air_transport')
+#df_rail      = get_df_by_year('IS.RRS.TOTL.KM', 'rail_lines')
+
+
 
 # log values
 log_gdp = gdp.copy()
@@ -192,17 +197,11 @@ df_internet.to_csv('data/internet.csv')
 df_cellphones.to_csv('data/cellphones.csv')
 #df_hospitals.to_csv('data/hospitals.csv')
 #df_doctors.to_csv('data/doctors.csv')
-
 log_gdp.to_csv('data/log_gdp.csv')
 log_pop.to_csv('data/log_pop.csv')
-
 gdp_growth.to_csv('data/gdp_growth.csv')
 gdp_growth_flat.to_csv('data/gdp_growth_flat.csv')
-
-## datasets used but not imported in python
-# https://data.worldbank.org/indicator/NY.GDP.MKTP.KD.ZG
-# 
-
+inflation_gdpd.to_csv('data/inflation_gdpd.csv')
 
 
 
