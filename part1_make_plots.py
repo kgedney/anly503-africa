@@ -193,9 +193,9 @@ my_range2 = list(range(1, 4))
 plt.hlines(y=my_range2, xmin=0, xmax=inflation_gdpd2['avg'], color='darkblue')
 plt.plot(inflation_gdpd2['avg'], my_range2, "o")
 plt.yticks(my_range2, inflation_gdpd2['country'])
-plt.title('Outlier Countries', loc='left', fontsize=14)
+#plt.title('Outlier Countries', loc='left', fontsize=14)
 plt.xlabel('Inflation (%)')
-plt.ylabel('')
+plt.ylabel('Outlier Countries')
 plt.show()
 
 

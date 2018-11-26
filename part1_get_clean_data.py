@@ -161,7 +161,7 @@ for year in years:
 print(df_2016.groupby('income_level').count())
 df_avg = df_2016.groupby('income_level').mean()
 df_avg = df_avg.T
-df_avg.plot(kind='bar', figsize=(8,5), title='Indicators by Income Level of Country',
+df_avg.plot(kind='bar', figsize=(8,5), title='Telecom Infastructure Indicators by Income Level of Country (2016)',
             color=['b','g','C1','r'])
 
 # check for statistical significance among income-levels
