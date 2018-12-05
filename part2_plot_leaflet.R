@@ -1,5 +1,3 @@
-
-
 # ref: https://rstudio.github.io/leaflet/choropleths.html
 
 # libraries
@@ -10,17 +8,17 @@ library(maptools)
 library(rgdal)
 library(sp)
 library(geojsonio)
+library(viridis)
 
 # set wd
 setwd('/Users/kgedney/Documents/georgetown/anly503/project/data')
 
-# import state level results by candidate
+# import country level data
 df  <- read.csv('df_leaflet.csv', stringsAsFactors = FALSE)
 df$COUNTRY <- df$country
 df <- df[(df$date == 2016),]
 
-# import US State map data (https://www.census.gov/geo/maps-data/data/cbf/cbf_state.html)
-# import Africa map data 
+# import Africa country map data (https://www.census.gov/geo/maps-data/data/cbf/cbf_state.html)
 africa.map <- readOGR(dsn='Africa_SHP', layer='Africa', stringsAsFactors = FALSE)
 
 # drop non Sub Saharan Africa countries
@@ -41,26 +39,21 @@ setdiff(map_countries, df_countries)
 # merge the data
 df_map <- merge(africa.map, df, by=c("COUNTRY"), duplicateGeoms = TRUE)
 
-# merge with state center lat and long (taken from: https://www.kaggle.com/washimahmed/usa-latlong-for-state-abbreviations)
-# centers <- read.csv('statelatlong.csv', stringsAsFactors = FALSE)
-# centers$NAME <- centers$City
-# electionmap  <- merge(electionmap, centers, by=c("NAME"))
-
-# merge with centers of each country
+# merge with centers (lat, long) of each country
 library(rgeos)
 library(rworldmap)
 
 # get world map
 wmap <- getMap(resolution="high")
 
-# get centroids
+# get centroids into dataframe
 centroids <- gCentroid(wmap, byid=TRUE)
 centroids <- as.data.frame(centroids)
 centroids$country <- rownames(centroids)
 
 # rename for successful merge
 centroids$country[centroids$country == 'Gambia'] <- 'Gambia, The'
-centroids$country[centroids$country == 'Democratic Republic of Congo'] <- 'Congo, Dem. Rep.'
+centroids$country[centroids$country == 'Democratic Republic of the Congo'] <- 'Congo, Dem. Rep.'
 centroids$country[centroids$country == 'Republic of the Congo'] <- "Congo, Rep."
 centroids$country[centroids$country == 'Ivory Coast'] <- "Cote d'Ivoire"
 
@@ -71,23 +64,38 @@ centroids <- centroids[centroids$country %in% df_countries,]
 df_map <- merge(df_map, centroids, by=c("country"), duplicateGeoms = TRUE)
 
 
+
+
+
 ###### MAPPING #######
+
 # set up colors for chloropleth
 #quantile(df$birth_rate_per_1000)
-
-pct.bins <-c(0, 5, 15, 30, 35, 40, 55, 100)
-pct.pal  <- c("#2166AC","#4393C3", "#D1E5F0",
-              "#F4A582", "#D6604D", "#B2182B")
+pct.bins <-c(0, 25, 30, 35, 40, 45, 100)
+pct.pal <- viridis(5)
 pct.pal  <- colorBin(pct.pal, bins=pct.bins)
 
 # format labels
-labels <- sprintf("Country: %s <br/>Birth Rate: %s", 
-                 df_map$country, round(df_map$birth_rate_per_1000, 0)) %>% lapply(htmltools::HTML)
+labels <- sprintf("Country: %s <br/>Birth Rate: %s <br/>Pop Using Internet: %s <br/>Income Level: %s", 
+                 df_map$country, round(df_map$birth_rate_per_1000, 0), 
+                 round(df_map$internet, 1),
+                 df_map$income_level) %>% lapply(htmltools::HTML)
 
-text_for_markers <- paste0("<strong>Country: </strong>",
-                            df_map$country,
-                         "<br><strong>% Pop with Access to Electricty: </strong>",
-                          round(df_map$electricity_access, 1))
+text_for_markers <- paste0('<strong>Country: </strong>', df_map$country,
+                           '<br><strong>Birth Rate: </strong>', round(df_map$birth_rate_per_1000, 0),
+                           '<br><strong>Pop Using Internet: </strong>', round(df_map$internet, 1), '%',
+                           '<br><strong>Income Level: </strong>', df_map$income_level)
+
+# format icons
+internet_icons <- awesomeIcons(
+  icon = 'flash',
+  iconColor = 'white',
+  library = 'ion',
+  markerColor = 'lightgray')
+
+# format income level circles
+income_levels = c("High income", "Upper middle income", "Lower middle income", "Low income")
+income_pal <- colorFactor(c("#1f77b4", "#2ca02c", "#ff7f0e", "#d62728"), domain = income_levels)
 
 # set up plot
 a_map <- leaflet(data = df_map) %>%
@@ -105,43 +113,41 @@ a_map <- leaflet(data = df_map) %>%
             opacity = 0.7, 
             title = 'Birth Rate (per 1000)',
             position = 'bottomright') %>%
+
+  addPopups(lng = 29.0003377 , lat = -25.0838838,
+            popup = "South Africa: Low Birth Rate, High Internet Access, <br> Upper middle income country",
+            options = popupOptions(closeButton = TRUE))  %>%
   
-  # addPopups(
-  #   lng = -107.2903, lat = 43.0760,
-  #   popup = "WY: Largest Margin for Trump",
-  #   options = popupOptions(closeButton = TRUE))  %>%
-  # 
-  # addPopups(
-  #   lng = -77.0369, lat = 38.9072,
-  #   popup = "DC: Largest Margin for Clinton",
-  #   options = popupOptions(closeButton = TRUE)) %>%
-  # 
-addMarkers(lat=df_map$y, lng=df_map$x,
-           popup=text_for_markers, group = "Electricity Access (%)") %>%
-  # 
-# add layers control
-addLayersControl(overlayGroups = c("Electricity Access (%)"),
+  addPopups(lng = 40.4897 , lat = 9.1450,
+            popup = "Ethiopia: Medium Birth Rate, Low Internet Access, <br> Low income country",
+            options = popupOptions(closeButton = TRUE))  %>%
+  
+  addPopups(lng = 5.266667 , lat = 14.883333,
+            popup = "Niger: High Birth Rate, Very Low Internet Access, <br> Low income country",
+            options = popupOptions(closeButton = TRUE))  %>%
+  
+  addCircleMarkers(lat=df_map$y, lng=df_map$x,
+                  fillColor = ~income_pal(df_map$income_level),
+                  radius = 5,
+                  fillOpacity = 1.0,
+                  stroke=TRUE,
+                  color='black',
+                  group = 'Country Income Level') %>%
+
+  addAwesomeMarkers(lat=df_map$y, lng=df_map$x,
+           popup=text_for_markers, group = "Internet Access (%)", 
+           icon=internet_icons) %>%
+
+  # add layers control
+  addLayersControl(overlayGroups = c("Internet Access (%)", "Country Income Level"),
                  options = layersControlOptions(collapsed = FALSE))
 
 a_map
 
-
-# to do: 
-# add popups
-# change colorscale
-# add more to markers
-# fix Congo
-
-
-
-
-
-
-  
-setwd('/Users/kgedney/Documents/georgetown/anly503/project/')
+setwd('/Users/kgedney/Documents/georgetown/anly503/project/part2_website/images')
 
 library(htmlwidgets)
-saveWidget(n_map, file="leaflet_map.html")
+saveWidget(a_map, file="leaflet_map.html")
 
 
 
